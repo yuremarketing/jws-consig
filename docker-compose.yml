@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL 15
+  db:
+    image: postgres:15
+    container_name: jwsconsig-db
+    restart: always
+    environment:
+      POSTGRES_USER: yuri_admin
+      POSTGRES_PASSWORD: sniper_password
+      POSTGRES_DB: consig_sniper_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - jwsconsig_data:/var/lib/postgresql/data
+
+  # Painel visual para gerenciar o banco
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: jwsconsig-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@jws.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8888:80"
+    depends_on:
+      - db
+
+volumes:
+  jwsconsig_data:

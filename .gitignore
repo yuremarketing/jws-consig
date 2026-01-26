@@ -1,0 +1,21 @@
+# Bloqueio de Dados (Segurança)
+*.csv
+*.sql
+*.db
+*.sqlite
+
+# Dependências e Compilação (Lixo)
+node_modules/
+/backend/target/
+/frontend/dist/
+/frontend/build/
+
+# IDEs e Sistema
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Variáveis de Ambiente
+.env
+.env.*
