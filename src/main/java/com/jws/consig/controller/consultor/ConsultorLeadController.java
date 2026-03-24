@@ -28,6 +28,14 @@ public class ConsultorLeadController {
     }
 
     @PatchMapping("/{id}/status")
+    @PatchMapping("/{id}/contato")
+    public ResponseEntity<Void> registrarContato(@PathVariable Long id) {
+        return repository.findById(id).map(lead -> {
+            log.info("[CONTATO] Tentativa de abordagem para Lead ID: {}", id);
+            return ResponseEntity.ok().<Void>build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestParam String status) {
         return repository.findById(id).map(lead -> {
             lead.setStatus(status.toUpperCase());

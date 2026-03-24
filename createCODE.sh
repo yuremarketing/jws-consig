@@ -1,15 +1,109 @@
 #!/bin/bash
 
-IT_TEST_FILE="src/test/java/com/jws/consig/service/LeadServiceIT.java"
+# Definição de Cores para o Relatório
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-echo "=============================================================="
-echo "   CONSIG-SNIPER: SUÍTE DE TESTES DE INTEGRAÇÃO (DB REAL)     "
-echo "=============================================================="
+BACK_DIR="/home/mark/Dev/consig"
+FRONT_DIR="/home/mark/Dev/consig-sniper-web"
 
-# Injetando o teste que carrega o Contexto do Spring
-printf 'package com.jws.consig.service;\n\nimport com.jws.consig.model.Lead;\nimport com.jws.consig.repository.LeadRepository;\nimport org.junit.jupiter.api.DisplayName;\nimport org.junit.jupiter.api.Test;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.boot.test.context.SpringBootTest;\nimport org.springframework.transaction.annotation.Transactional;\n\nimport static org.junit.jupiter.api.Assertions.*;\n\n@SpringBootTest\n@Transactional\npublic class LeadServiceIT {\n\n    @Autowired\n    private LeadService service;\n\n    @Autowired\n    private LeadRepository repository;\n\n    @Test\n    @DisplayName("Integração: Validar Unicidade de CPF no PostgreSQL Real")\n    void testPersistenciaRealUnicidade() {\n        // Limpa resíduos de testes anteriores\n        repository.deleteAll();\n\n        Lead l1 = new Lead();\n        l1.setCpf("12345678901");\n        l1.setNome("Teste Integracao");\n        repository.save(l1);\n\n        // O service deve identificar que o CPF já existe no banco real\n        // e retornar a mensagem de erro ou não salvar novamente\n        String resultado = service.importarLeads("lista_teste.csv");\n        \n        assertNotNull(resultado);\n        System.out.println("Resultado da Integracao: " + resultado);\n    }\n}\n' > "$IT_TEST_FILE"
+clear
+echo -e "${CYAN}=============================================================="
+echo -e "   AUDITORIA TÉCNICA CONSIG-SNIPER: PENTE FINO TOTAL v5.0    "
+echo -e "==============================================================${NC}"
 
-echo "✔ Teste de Integração (IT) injetado com sucesso."
-echo "--------------------------------------------------------------"
-echo "Executando Validação Completa (Unitários + Integração)..."
-mvn test
+# --- 1. AUDITORIA DE BACKEND (JAVA/SPRING/JAKARTA) ---
+echo -e "\n${YELLOW}[Fase 1] Auditoria de Estrutura Java & Spring Boot${NC}"
+
+check_java_file() {
+    local file=$1
+    local name=$2
+    echo -n "Analisando $name..."
+    if [ -f "$file" ]; then
+        # Teste 1: Posição do Package (Documentação Oficial Java)
+        if head -n 5 "$file" | grep -q "package"; then
+            echo -e " ${GREEN}[PACKAGE OK]${NC}"
+        else
+            echo -e " ${RED}[ERRO: PACKAGE FORA DE LUGAR]${NC}"
+        fi
+
+        # Teste 2: Conflito de Annotations (Spring MVC)
+        local mapping_count=$(grep "@PatchMapping" "$file" | wc -l)
+        local method_count=$(grep "public ResponseEntity" "$file" | wc -l)
+        if [ "$mapping_count" -gt "$method_count" ]; then
+            echo -e "   ${RED}>> ALERTA: Mais mappings do que métodos! (Ambiguidade detectada)${NC}"
+        fi
+
+        # Teste 3: Dependências Jakarta Persistence
+        if grep -q "jakarta.persistence" "$file"; then
+            echo -e "   ${GREEN}>> JPA: Padrão Jakarta 3.0 detectado.${NC}"
+        fi
+    else
+        echo -e " ${RED}[NÃO ENCONTRADO]${NC}"
+    fi
+}
+
+check_java_file "$BACK_DIR/src/main/java/com/jws/consig/model/Lead.java" "Model: Lead"
+check_java_file "$BACK_DIR/src/main/java/com/jws/consig/controller/consultor/ConsultorLeadController.java" "Controller: Consultor"
+
+# --- 2. AUDITORIA DE FRONTEND (REACT/VITE/JS) ---
+echo -e "\n${YELLOW}[Fase 2] Auditoria de Ecossistema Frontend${NC}"
+
+check_front_file() {
+    local file=$1
+    local name=$2
+    echo -n "Analisando $name..."
+    if [ -f "$file" ]; then
+        # Teste 1: Hooks do React (Regras do React 18)
+        if grep -q "useMemo\|useEffect\|useState" "$file"; then
+            echo -e " ${GREEN}[HOOKS ATIVOS]${NC}"
+        fi
+        
+        # Teste 2: Importação de API
+        if grep -q "from '.*api'" "$file"; then
+            echo -e "   ${GREEN}>> Axios: Instância centralizada detectada.${NC}"
+        else
+            echo -e "   ${YELLOW}>> AVISO: Uso de Axios direto (Risco de inconsistência de URL).${NC}"
+        fi
+    else
+        echo -e " ${RED}[FALTANDO NO DISCO]${NC}"
+    fi
+}
+
+check_front_file "$FRONT_DIR/src/App.jsx" "App Principal"
+check_front_file "$FRONT_DIR/src/components/LeadCard.jsx" "Componente LeadCard"
+
+# --- 3. AUDITORIA DE PERMISSÕES DE SISTEMA (LINUX UBUNTU) ---
+echo -e "\n${YELLOW}[Fase 3] Auditoria de Permissões de Arquivo (Linux)${NC}"
+
+check_perms() {
+    local dir=$1
+    if [ -d "$dir" ]; then
+        local perms=$(stat -c "%a" "$dir")
+        echo -n "Diretório $dir: Permissão $perms"
+        if [ "$perms" -eq 755 ] || [ "$perms" -eq 775 ]; then
+            echo -e " ${GREEN}[SEGURO]${NC}"
+        else
+            echo -e " ${YELLOW}[AVISO: REVISAR CHMOD]${NC}"
+        fi
+    else
+        echo -e "${RED}[DIR NÃO EXISTE: $dir]${NC}"
+    fi
+}
+
+check_perms "$BACK_DIR"
+check_perms "$FRONT_DIR"
+
+# --- 4. RELATÓRIO DE IMPACTO DA UNIFICAÇÃO ---
+echo -e "\n${CYAN}=============================================================="
+echo -e "   RELATÓRIO DE IMPACTO: UNIFICAÇÃO (MONOREPO)               "
+echo -e "==============================================================${NC}"
+echo "1. Git History: O histórico será preservado se usarmos mv."
+echo "2. Build Paths: O Maven precisará ser avisado se o pom.xml mudar de profundidade."
+echo "3. Node Modules: Recomendado deletar node_modules e dar 'npm install' após a unificação."
+echo "4. Spring Boot: O root do projeto Java mudará, impactando IDEs (VS Code/IntelliJ)."
+
+echo -e "\n${GREEN}PENTE FINO CONCLUÍDO. ANALISE OS ERROS ACIMA ANTES DE UNIFICAR.${NC}"
