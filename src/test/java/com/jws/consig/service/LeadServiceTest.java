@@ -24,7 +24,7 @@ public class LeadServiceTest {
     @DisplayName("Se Lead existe, não deve chamar o Save")
     void testNaoDeveSalvarDuplicado() {
         when(repository.findByCpf(anyString())).thenReturn(Optional.of(new Lead()));
-        service.importarLeads("lista_teste.csv");
+        service.importarLeadsMassivo("lista_teste.csv");
         verify(repository, never()).save(any(Lead.class));
     }
 }

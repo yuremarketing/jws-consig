@@ -1,109 +1,146 @@
 #!/bin/bash
 
-# Definição de Cores para o Relatório
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+echo "--- 🎯 INICIANDO REPARO TOTAL DO SNIPER ---"
 
-BACK_DIR="/home/mark/Dev/consig"
-FRONT_DIR="/home/mark/Dev/consig-sniper-web"
+# 1. MATAR A DUPLICIDADE (O SEU MAIOR PROBLEMA)
+# O Spring estava tentando ler dois AuthControllers e dois Models (User e Usuario)
+rm -rf src/main/java/com/jws/consig/controller/auth
+rm -rf src/main/java/com/jws/consig/model/Usuario.java
+rm -rf src/main/java/com/jws/consig/repository/UsuarioRepository.java
 
-clear
-echo -e "${CYAN}=============================================================="
-echo -e "   AUDITORIA TÉCNICA CONSIG-SNIPER: PENTE FINO TOTAL v5.0    "
-echo -e "==============================================================${NC}"
+# 2. GARANTIR PASTAS
+mkdir -p src/main/java/com/jws/consig/model
+mkdir -p src/main/java/com/jws/consig/repository
+mkdir -p src/main/java/com/jws/consig/controller
+mkdir -p src/main/java/com/jws/consig/config
 
-# --- 1. AUDITORIA DE BACKEND (JAVA/SPRING/JAKARTA) ---
-echo -e "\n${YELLOW}[Fase 1] Auditoria de Estrutura Java & Spring Boot${NC}"
+# 3. UNIFICAR MODEL (User)
+cat << 'EOF' > src/main/java/com/jws/consig/model/User.java
+package com.jws.consig.model;
+import jakarta.persistence.*;
+import lombok.Data;
 
-check_java_file() {
-    local file=$1
-    local name=$2
-    echo -n "Analisando $name..."
-    if [ -f "$file" ]; then
-        # Teste 1: Posição do Package (Documentação Oficial Java)
-        if head -n 5 "$file" | grep -q "package"; then
-            echo -e " ${GREEN}[PACKAGE OK]${NC}"
-        else
-            echo -e " ${RED}[ERRO: PACKAGE FORA DE LUGAR]${NC}"
-        fi
-
-        # Teste 2: Conflito de Annotations (Spring MVC)
-        local mapping_count=$(grep "@PatchMapping" "$file" | wc -l)
-        local method_count=$(grep "public ResponseEntity" "$file" | wc -l)
-        if [ "$mapping_count" -gt "$method_count" ]; then
-            echo -e "   ${RED}>> ALERTA: Mais mappings do que métodos! (Ambiguidade detectada)${NC}"
-        fi
-
-        # Teste 3: Dependências Jakarta Persistence
-        if grep -q "jakarta.persistence" "$file"; then
-            echo -e "   ${GREEN}>> JPA: Padrão Jakarta 3.0 detectado.${NC}"
-        fi
-    else
-        echo -e " ${RED}[NÃO ENCONTRADO]${NC}"
-    fi
+@Entity @Table(name = "users") @Data
+public class User {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String email;
+    private String password;
+    private String role; // Ex: ROLE_ADMIN, ROLE_CONSULTOR
 }
+EOF
 
-check_java_file "$BACK_DIR/src/main/java/com/jws/consig/model/Lead.java" "Model: Lead"
-check_java_file "$BACK_DIR/src/main/java/com/jws/consig/controller/consultor/ConsultorLeadController.java" "Controller: Consultor"
+# 4. UNIFICAR REPOSITORY
+cat << 'EOF' > src/main/java/com/jws/consig/repository/UserRepository.java
+package com.jws.consig.repository;
+import com.jws.consig.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
 
-# --- 2. AUDITORIA DE FRONTEND (REACT/VITE/JS) ---
-echo -e "\n${YELLOW}[Fase 2] Auditoria de Ecossistema Frontend${NC}"
-
-check_front_file() {
-    local file=$1
-    local name=$2
-    echo -n "Analisando $name..."
-    if [ -f "$file" ]; then
-        # Teste 1: Hooks do React (Regras do React 18)
-        if grep -q "useMemo\|useEffect\|useState" "$file"; then
-            echo -e " ${GREEN}[HOOKS ATIVOS]${NC}"
-        fi
-        
-        # Teste 2: Importação de API
-        if grep -q "from '.*api'" "$file"; then
-            echo -e "   ${GREEN}>> Axios: Instância centralizada detectada.${NC}"
-        else
-            echo -e "   ${YELLOW}>> AVISO: Uso de Axios direto (Risco de inconsistência de URL).${NC}"
-        fi
-    else
-        echo -e " ${RED}[FALTANDO NO DISCO]${NC}"
-    fi
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
 }
+EOF
 
-check_front_file "$FRONT_DIR/src/App.jsx" "App Principal"
-check_front_file "$FRONT_DIR/src/components/LeadCard.jsx" "Componente LeadCard"
+# 5. AUTHCONTROLLER ÚNICO (ADMIN + CONSULTOR)
+# Ele usa o seu JwtService real e o PasswordEncoder
+cat << 'EOF' > src/main/java/com/jws/consig/controller/AuthController.java
+package com.jws.consig.controller;
 
-# --- 3. AUDITORIA DE PERMISSÕES DE SISTEMA (LINUX UBUNTU) ---
-echo -e "\n${YELLOW}[Fase 3] Auditoria de Permissões de Arquivo (Linux)${NC}"
+import com.jws.consig.config.JwtService;
+import com.jws.consig.model.User;
+import com.jws.consig.repository.UserRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
-check_perms() {
-    local dir=$1
-    if [ -d "$dir" ]; then
-        local perms=$(stat -c "%a" "$dir")
-        echo -n "Diretório $dir: Permissão $perms"
-        if [ "$perms" -eq 755 ] || [ "$perms" -eq 775 ]; then
-            echo -e " ${GREEN}[SEGURO]${NC}"
-        else
-            echo -e " ${YELLOW}[AVISO: REVISAR CHMOD]${NC}"
-        fi
-    else
-        echo -e "${RED}[DIR NÃO EXISTE: $dir]${NC}"
-    fi
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+public class AuthController {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String password = request.get("password");
+
+        System.out.println("\n--- 🕵️ AUDITORIA DE LOGIN ---");
+        System.out.println(">>> TENTATIVA: [" + email + "]");
+
+        return userRepository.findByEmail(email)
+            .map(user -> {
+                if (passwordEncoder.matches(password, user.getPassword())) {
+                    String token = jwtService.generateToken(user.getEmail(), user.getRole());
+                    System.out.println("✅ ACESSO CONCEDIDO: " + user.getRole());
+                    return ResponseEntity.ok(Map.of(
+                        "token", token,
+                        "role", user.getRole(),
+                        "name", user.getName(),
+                        "email", user.getEmail()
+                    ));
+                }
+                return ResponseEntity.status(401).body(Map.of("error", "Senha incorreta"));
+            })
+            .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Usuário não encontrado")));
+    }
 }
+EOF
 
-check_perms "$BACK_DIR"
-check_perms "$FRONT_DIR"
+# 6. DATALOADER (CARGA AUTOMÁTICA DOS DOIS PERFIS)
+cat << 'EOF' > src/main/java/com/jws/consig/config/DataLoader.java
+package com.jws.consig.config;
 
-# --- 4. RELATÓRIO DE IMPACTO DA UNIFICAÇÃO ---
-echo -e "\n${CYAN}=============================================================="
-echo -e "   RELATÓRIO DE IMPACTO: UNIFICAÇÃO (MONOREPO)               "
-echo -e "==============================================================${NC}"
-echo "1. Git History: O histórico será preservado se usarmos mv."
-echo "2. Build Paths: O Maven precisará ser avisado se o pom.xml mudar de profundidade."
-echo "3. Node Modules: Recomendado deletar node_modules e dar 'npm install' após a unificação."
-echo "4. Spring Boot: O root do projeto Java mudará, impactando IDEs (VS Code/IntelliJ)."
+import com.jws.consig.model.User;
+import com.jws.consig.repository.UserRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-echo -e "\n${GREEN}PENTE FINO CONCLUÍDO. ANALISE OS ERROS ACIMA ANTES DE UNIFICAR.${NC}"
+@Component
+public class DataLoader implements CommandLineRunner {
+    private final UserRepository repo;
+    private final PasswordEncoder encoder;
+
+    public DataLoader(UserRepository repo, PasswordEncoder encoder) {
+        this.repo = repo;
+        this.encoder = encoder;
+    }
+
+    @Override
+    public void run(String... args) {
+        // ADMIN
+        if (repo.findByEmail("admin@consig.com").isEmpty()) {
+            User admin = new User();
+            admin.setName("Admin");
+            admin.setEmail("admin@consig.com");
+            admin.setPassword(encoder.encode("admin123"));
+            admin.setRole("ROLE_ADMIN");
+            repo.save(admin);
+        }
+        // CONSULTOR (Ajustado para bater com seu SecurityConfig)
+        if (repo.findByEmail("consultor@consig.com").isEmpty()) {
+            User c = new User();
+            c.setName("Consultor Sniper");
+            c.setEmail("consultor@consig.com");
+            c.setPassword(encoder.encode("senha123"));
+            c.setRole("ROLE_CONSULTOR");
+            repo.save(c);
+        }
+        System.out.println("✅ SNIPER: Usuarios Admin e Consultor prontos!");
+    }
+}
+EOF
+
+echo "--- 🚀 REPARO CONCLUÍDO. AGORA É SÓ RODAR O MVNW! ---"

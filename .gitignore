@@ -1,4 +1,38 @@
-/target/
-.mvn/
-.idea/
-*.class
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/resources/*.properties
+!**/src/test/resources/*.properties
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Scripts de Teste Locais ###
+teste_vitoria.sh
+teste_sniper.sh
+reparo_total.sh
+sniper_final_fix.sh
+fix_security.sh
+fix_jwt_service.sh
+sniper_scan.sh

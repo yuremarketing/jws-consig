@@ -1,36 +1,28 @@
 package com.jws.consig.controller.admin;
 
-import com.jws.consig.model.SystemConfig;
-import com.jws.consig.repository.ConfigRepository;
+import com.jws.consig.dto.DistribuirRequest;
+import com.jws.consig.service.LeadService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import java.util.Map;
-import java.util.List;
+import jakarta.annotation.security.PermitAll;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/admin/leads")
 public class AdminLeadController {
 
-    private final ConfigRepository configRepo;
+    @Autowired
+    private LeadService leadService;
 
-    public AdminLeadController(ConfigRepository configRepo) { 
-        this.configRepo = configRepo; 
-    }
-
-    @PostMapping("/leads/importar")
-    public ResponseEntity<?> importarLeads(@RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(Map.of("message", "Arquivo " + file.getOriginalFilename() + " recebido com sucesso!"));
-    }
-
-    @GetMapping("/config")
-    public ResponseEntity<List<SystemConfig>> getConfigs() {
-        return ResponseEntity.ok(configRepo.findAll());
-    }
-
-    @PostMapping("/config")
-    public ResponseEntity<?> saveConfig(@RequestBody Map<String, String> payload) {
-        payload.forEach((k, v) -> configRepo.save(new SystemConfig(k, v)));
-        return ResponseEntity.ok(Map.of("status", "Configuracoes Salvas no DB"));
+    @PermitAll
+    @PostMapping("/distribuir")
+    public ResponseEntity<String> distribuir(@RequestBody DistribuirRequest request) {
+        int total = leadService.distribuirAgora(
+            request.getConsultorId(),
+            request.getUf(),
+            request.getOrgao(),
+            request.getMargemMin()
+        );
+        return ResponseEntity.ok("Sucesso! " + total + " leads entregues ao consultor.");
     }
 }
