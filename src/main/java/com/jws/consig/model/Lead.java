@@ -8,15 +8,19 @@ import java.math.BigDecimal;
 @Table(name = "leads")
 @Data
 public class Lead {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String nome;
     private String cpf;
-    private String telefone;
     private BigDecimal margem;
+    private String telefone;
     private String orgao;
-    private String status; // Necessário para o ConsultorLeadController
-    private Long consultorId; // Necessário para a distribuição
+    private String status = "DISPONIVEL";
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private User consultor;
 }

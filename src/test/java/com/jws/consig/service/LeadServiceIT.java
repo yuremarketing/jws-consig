@@ -1,18 +1,17 @@
 package com.jws.consig.service;
 
-import com.jws.consig.model.Lead;
 import com.jws.consig.repository.LeadRepository;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SpringBootTest
 @Transactional
-public class LeadServiceIT {
+class LeadServiceIT {
 
     @Autowired
     private LeadService service;
@@ -21,21 +20,12 @@ public class LeadServiceIT {
     private LeadRepository repository;
 
     @Test
-    @DisplayName("Integração: Validar Unicidade de CPF no PostgreSQL Real")
-    void testPersistenciaRealUnicidade() {
-        // Limpa resíduos de testes anteriores
-        repository.deleteAll();
+    void testImportCSVIntegration() throws Exception {
+        String csvContent = "nome;cpf;margem;telefone;orgao\nTESTE;00011122233;500.00;61999998888;GDF";
+        MockMultipartFile file = new MockMultipartFile("file", "leads.csv", "text/csv", csvContent.getBytes());
 
-        Lead l1 = new Lead();
-        l1.setCpf("12345678901");
-        l1.setNome("Teste Integracao");
-        repository.save(l1);
+        service.importCSV(file);
 
-        // O service deve identificar que o CPF já existe no banco real
-        // e retornar a mensagem de erro ou não salvar novamente
-        service.importarLeadsMassivo("lista_teste.csv");
-        
-//         assertNotNull(resultado);
-//         System.out.println("Resultado da Integracao: " + resultado);
+        assertFalse(repository.findAll().isEmpty(), "O banco não deveria estar vazio após a importação");
     }
 }

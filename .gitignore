@@ -1,7 +1,7 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
-!**/src/main/resources/*.properties
-!**/src/test/resources/*.properties
+!**/src/main/resources/*.jar
+!**/src/test/resources/*.jar
 
 ### STS ###
 .apt_generated
@@ -10,7 +10,7 @@ target/
 .project
 .settings
 .springBeans
-.sts4-cache
+.sts4-check
 
 ### IntelliJ IDEA ###
 .idea
@@ -28,11 +28,5 @@ target/
 ### VS Code ###
 .vscode/
 
-### Scripts de Teste Locais ###
-teste_vitoria.sh
-teste_sniper.sh
-reparo_total.sh
-sniper_final_fix.sh
-fix_security.sh
-fix_jwt_service.sh
-sniper_scan.sh
+### Help log ###
+.help.log

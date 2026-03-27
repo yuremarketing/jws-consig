@@ -1,3 +1,5 @@
+#!/bin/bash
+cat << 'FIM_DO_JAVA' > src/main/java/com/jws/consig/config/SecurityConfig.java
 package com.jws.consig.config;
 
 import org.springframework.context.annotation.Bean;
@@ -31,7 +33,6 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/error").permitAll() // Padrão oficial para evitar 403 em erros 404
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/leads/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CONSULTOR")
                 .anyRequest().authenticated()
@@ -51,3 +52,5 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
+FIM_DO_JAVA
+echo "--- 🔒 SECURITYCONFIG COMPLETO (ROTAS + ENCRIPTADOR) SOBRESCRITO! ---"
