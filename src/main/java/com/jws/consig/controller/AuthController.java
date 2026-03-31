@@ -1,50 +1,39 @@
 package com.jws.consig.controller;
 
-import com.jws.consig.config.JwtService;
-import com.jws.consig.model.User;
-import com.jws.consig.repository.UserRepository;
+import com.jws.consig.security.JwtUtils;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
+    public AuthController(JwtUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String password = request.get("password");
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credenciais) {
+        String email = credenciais.get("email");
+        String password = credenciais.get("password");
 
-        System.out.println("\n--- 🕵️ AUDITORIA DE LOGIN ---");
-        System.out.println(">>> TENTATIVA: [" + email + "]");
+        // Validação Sniper: Por enquanto fixa, logo conectaremos ao banco
+        if ("admin@consig.com".equals(email) && "admin".equals(password)) {
+            String token = jwtUtils.generateToken(email);
+            
+            // Retorna o Token e o Perfil (CU-01)
+            return ResponseEntity.ok(Map.of(
+                "token", token,
+                "role", "ROLE_ADMIN",
+                "email", email
+            ));
+        }
 
-        return userRepository.findByEmail(email)
-            .map(user -> {
-                if (passwordEncoder.matches(password, user.getPassword())) {
-                    String token = jwtService.generateToken(user.getEmail(), user.getRole());
-                    System.out.println("✅ ACESSO CONCEDIDO: " + user.getRole());
-                    return ResponseEntity.ok(Map.of(
-                        "token", token,
-                        "role", user.getRole(),
-                        "name", user.getName(),
-                        "email", user.getEmail()
-                    ));
-                }
-                return ResponseEntity.status(401).body(Map.of("error", "Senha incorreta"));
-            })
-            .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Usuário não encontrado")));
+        // Se errar, barra na entrada (401 Unauthorized)
+        return ResponseEntity.status(401).body(Map.of("error", "E-mail ou senha inválidos"));
     }
 }

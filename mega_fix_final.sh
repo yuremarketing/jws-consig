@@ -1,15 +1,27 @@
+#!/bin/bash
+
+echo "=== 🚀 INICIANDO MEGA FIX: REGRAS DE NEGÓCIO + INFRA ==="
+
+# PASSO 1: Aumentar limite de upload no application.properties
+echo "[1/3] Ajustando limites de tamanho de arquivo..."
+PROPS="src/main/resources/application.properties"
+sed -i '/spring.servlet.multipart/d' $PROPS
+echo "spring.servlet.multipart.max-file-size=10MB" >> $PROPS
+echo "spring.servlet.multipart.max-request-size=10MB" >> $PROPS
+echo "✅ Limites de 10MB configurados."
+
+# PASSO 2: Injetar LeadService inteligente (Aceita ; e , e limpa números)
+echo "[2/3] Atualizando LeadService com lógica de detecção de CSV..."
+cat << 'INNER_EOF' > src/main/java/com/jws/consig/service/LeadService.java
 package com.jws.consig.service;
 
 import com.jws.consig.model.Lead;
 import com.jws.consig.model.User;
 import com.jws.consig.repository.LeadRepository;
 import com.jws.consig.repository.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -21,9 +33,6 @@ import java.util.List;
 public class LeadService {
     private final LeadRepository repository;
     private final UserRepository userRepository;
-    
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public LeadService(LeadRepository repository, UserRepository userRepository) {
         this.repository = repository;
@@ -34,30 +43,25 @@ public class LeadService {
         return repository.findAll(pageable);
     }
 
-    @Transactional
     public void importCSV(MultipartFile file) throws Exception {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             boolean firstLine = true;
-            int count = 0;
-            
-            System.out.println("🚀 Iniciando importação de alta performance...");
-
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty()) continue;
                 if (firstLine) { firstLine = false; continue; }
 
+                // Detecta separador e limpa aspas se houver
                 String separator = line.contains(";") ? ";" : ",";
                 String[] data = line.split(separator);
 
                 if (data.length >= 4) {
-                    String cpf = data[0].replace("\"", "").trim();
-                    
-                    // Upsert rápido
-                    Lead lead = repository.findByCpf(cpf).orElse(new Lead());
-                    lead.setCpf(cpf);
+                    Lead lead = new Lead();
+                    lead.setCpf(data[0].replace("\"", "").trim());
                     lead.setNome(data[1].replace("\"", "").trim());
                     
+                    // Mapeamento dinâmico baseado no seu arquivo real
+                    // Se for BMG (len > 7), usa índices específicos, senão usa padrão
                     if (data.length >= 8) {
                         lead.setOrgao(data[3].trim()); 
                         lead.setEstado(data[5].trim()); 
@@ -69,20 +73,10 @@ public class LeadService {
                         lead.setEstado(data.length > 4 ? data[4].trim() : "DF");
                     }
 
-                    if (lead.getId() == null) lead.setStatus("DISPONIVEL");
-                    
+                    lead.setStatus("DISPONIVEL");
                     repository.save(lead);
-                    count++;
-
-                    // LIMPEZA DE CACHE (Crucial para não travar o Java)
-                    if (count % 100 == 0) {
-                        entityManager.flush();
-                        entityManager.clear();
-                        System.out.println("⏳ Sincronizados: " + count + " leads com o banco...");
-                    }
                 }
             }
-            System.out.println("✅ TOTAL: " + count + " leads persistidos com sucesso!");
         }
     }
 
@@ -101,3 +95,12 @@ public class LeadService {
         return repository.findAll();
     }
 }
+INNER_EOF
+echo "✅ LeadService atualizado com inteligência de separador."
+
+# PASSO 3: Reset de Ambiente e Compilação
+echo "[3/3] Limpando processos e compilando..."
+fuser -k 8080/tcp 2>/dev/null
+./mvnw clean compile
+
+echo -e "\n=== 🏁 TUDO PRONTO! RODE: ./mvnw spring-boot:run ==="

@@ -34,22 +34,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String jwt = authHeader.substring(7);
-        String userEmail = jwtService.extractUsername(jwt);
-        String role = jwtService.extractRole(jwt); // Garanta que esse método existe no seu JwtService
+        
+        try {
+            String userEmail = jwtService.extractUsername(jwt);
+            String role = jwtService.extractRole(jwt);
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtService.isTokenValid(jwt)) {
-                // Criamos a autoridade EXATAMENTE como está no banco (ROLE_CONSULTOR)
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userEmail,
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority(role))
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                System.out.println("✅ FILTRO: Usuario [" + userEmail + "] autenticado com role [" + role + "]");
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtService.isTokenValid(jwt)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userEmail,
+                            null,
+                            Collections.singletonList(new SimpleGrantedAuthority(role))
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("✅ FILTRO: Usuario [" + userEmail + "] autenticado com sucesso.");
+                }
             }
+        } catch (Exception e) {
+            // Se o token for lixo, expirado ou malformado, não fazemos nada.
+            // O SecurityContext continuará vazio e o Spring Security dará 403/401 automaticamente.
+            System.err.println("⚠️ FILTRO: Tentativa de acesso com token inválido barrada.");
         }
+
         filterChain.doFilter(request, response);
     }
 }

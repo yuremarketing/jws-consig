@@ -1,11 +1,15 @@
+#!/bin/bash
+
+echo "=== 🏎️ TURBINANDO A IMPORTAÇÃO (BATCH PROCESSING) ==="
+
+# Atualizando o LeadService com Transação e Logs de Progresso
+cat << 'INNER_EOF' > src/main/java/com/jws/consig/service/LeadService.java
 package com.jws.consig.service;
 
 import com.jws.consig.model.Lead;
 import com.jws.consig.model.User;
 import com.jws.consig.repository.LeadRepository;
 import com.jws.consig.repository.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,14 +20,12 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class LeadService {
     private final LeadRepository repository;
     private final UserRepository userRepository;
-    
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public LeadService(LeadRepository repository, UserRepository userRepository) {
         this.repository = repository;
@@ -41,7 +43,7 @@ public class LeadService {
             boolean firstLine = true;
             int count = 0;
             
-            System.out.println("🚀 Iniciando importação de alta performance...");
+            System.out.println("🚀 Iniciando processamento do arquivo...");
 
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty()) continue;
@@ -53,17 +55,18 @@ public class LeadService {
                 if (data.length >= 4) {
                     String cpf = data[0].replace("\"", "").trim();
                     
-                    // Upsert rápido
+                    // Lógica Upsert
                     Lead lead = repository.findByCpf(cpf).orElse(new Lead());
+                    
                     lead.setCpf(cpf);
                     lead.setNome(data[1].replace("\"", "").trim());
                     
-                    if (data.length >= 8) {
+                    if (data.length >= 8) { // Formato BMG
                         lead.setOrgao(data[3].trim()); 
                         lead.setEstado(data[5].trim()); 
                         String mStr = data[7].trim().replace(".", "").replace(",", ".");
                         lead.setMargem(new BigDecimal(mStr));
-                    } else {
+                    } else { // Formato Padrão
                         lead.setOrgao(data[2].trim());
                         lead.setMargem(new BigDecimal(data[3].trim().replace(",", ".")));
                         lead.setEstado(data.length > 4 ? data[4].trim() : "DF");
@@ -74,15 +77,13 @@ public class LeadService {
                     repository.save(lead);
                     count++;
 
-                    // LIMPEZA DE CACHE (Crucial para não travar o Java)
-                    if (count % 100 == 0) {
-                        entityManager.flush();
-                        entityManager.clear();
-                        System.out.println("⏳ Sincronizados: " + count + " leads com o banco...");
+                    // Log de progresso a cada 50 registros
+                    if (count % 50 == 0) {
+                        System.out.println("⏳ Processados: " + count + " leads...");
                     }
                 }
             }
-            System.out.println("✅ TOTAL: " + count + " leads persistidos com sucesso!");
+            System.out.println("✅ Finalizado! Total de " + count + " leads processados.");
         }
     }
 
@@ -101,3 +102,7 @@ public class LeadService {
         return repository.findAll();
     }
 }
+INNER_EOF
+
+echo "✅ LeadService otimizado!"
+./mvnw clean compile

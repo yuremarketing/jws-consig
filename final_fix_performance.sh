@@ -1,3 +1,9 @@
+#!/bin/bash
+
+echo "=== ⚡ OTIMIZAÇÃO SUPREMA DE PERSISTÊNCIA ==="
+
+# Ajustando o LeadService para limpar a memória durante o processo
+cat << 'INNER_EOF' > src/main/java/com/jws/consig/service/LeadService.java
 package com.jws.consig.service;
 
 import com.jws.consig.model.Lead;
@@ -101,3 +107,7 @@ public class LeadService {
         return repository.findAll();
     }
 }
+INNER_EOF
+
+echo "✅ LeadService turbinado com Flush/Clear."
+./mvnw clean compile

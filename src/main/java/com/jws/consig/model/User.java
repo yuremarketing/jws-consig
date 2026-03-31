@@ -1,13 +1,29 @@
 package com.jws.consig.model;
-import jakarta.persistence.*;
-import lombok.Data;
 
-@Entity @Table(name = "users") @Data
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "users")
 public class User {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
+
+    private String nome;
+
+    @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(nullable = false)
     private String password;
-    private String role; // Ex: ROLE_ADMIN, ROLE_CONSULTOR
+
+    private String role; // ROLE_ADMIN, ROLE_CONSULTOR
 }

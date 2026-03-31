@@ -1,3 +1,6 @@
+#!/bin/bash
+# Ajustando apenas o necessário para o React parar de dar erro de JSON.parse
+cat << 'INNER_EOF' > src/main/java/com/jws/consig/controller/LeadController.java
 package com.jws.consig.controller;
 
 import com.jws.consig.model.Lead;
@@ -37,3 +40,6 @@ public class LeadController {
         }
     }
 }
+INNER_EOF
+echo "✅ LeadController atualizado para responder JSON."
+./mvnw clean compile
