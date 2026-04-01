@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-@Data
 @Entity
 @Builder
 @NoArgsConstructor
@@ -31,9 +30,21 @@ public class User implements UserDetails {
 
     private String role;
 
+    // --- GETTERS E SETTERS EXPLÍCITOS (Adeus erro do Lombok) ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String formattedRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+        String formattedRole = (role != null && role.startsWith("ROLE_")) ? role : "ROLE_" + role;
         return List.of(new SimpleGrantedAuthority(formattedRole));
     }
 

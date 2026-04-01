@@ -19,8 +19,10 @@ public class LeadController {
     }
 
     @GetMapping("/leads")
-    public ResponseEntity<List<Lead>> listarLeads() {
-        return ResponseEntity.ok(leadRepository.findAll());
+    public ResponseEntity<org.springframework.data.domain.Page<Lead>> listarLeads(
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(leadRepository.findAll(org.springframework.data.domain.PageRequest.of(page, size)));
     }
 
     @GetMapping("/leads/orgaos")

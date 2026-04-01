@@ -1,12 +1,10 @@
 package com.jws.consig.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -29,7 +27,7 @@ public class Lead {
     private String estado;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal margem; // Adicionando a margem que o LeadController pediu
+    private BigDecimal margem;
 
     @Column(nullable = false)
     private String status = "Disponível";
@@ -37,4 +35,22 @@ public class Lead {
     @ManyToOne
     @JoinColumn(name = "consultor_id")
     private User consultor;
+
+    // --- GETTERS E SETTERS EXPLÍCITOS ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+    public String getCpf() { return cpf; }
+    public void setCpf(String cpf) { this.cpf = cpf; }
+    public String getOrgao() { return orgao; }
+    public void setOrgao(String orgao) { this.orgao = orgao; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+    public BigDecimal getMargem() { return margem; }
+    public void setMargem(BigDecimal margem) { this.margem = margem; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public User getConsultor() { return consultor; }
+    public void setConsultor(User consultor) { this.consultor = consultor; }
 }
