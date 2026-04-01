@@ -37,7 +37,7 @@ public class LeadController {
 
     @GetMapping("/leads/orgaos")
     public ResponseEntity<List<String>> listarOrgaos() {
-        return ResponseEntity.ok(Arrays.asList("INSS", "SIAPE", "FGTS"));
+        return ResponseEntity.ok(leadRepository.findDistinctOrgaos());
     }
 
     @GetMapping("/consultores")

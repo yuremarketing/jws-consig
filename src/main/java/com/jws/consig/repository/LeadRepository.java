@@ -24,4 +24,8 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
                                @Param("minMargem") BigDecimal minMargem, 
                                @Param("maxMargem") BigDecimal maxMargem, 
                                Pageable pageable);
+
+    // Traz apenas os órgãos únicos que realmente existem no banco
+    @Query("SELECT DISTINCT l.orgao FROM Lead l WHERE l.orgao IS NOT NULL AND TRIM(l.orgao) != ''")
+    List<String> findDistinctOrgaos();
 }
