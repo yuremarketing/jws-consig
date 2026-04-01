@@ -1,32 +1,35 @@
 package com.jws.consig.controller;
 
 import com.jws.consig.model.Lead;
-import com.jws.consig.service.LeadService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import com.jws.consig.repository.LeadRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Arrays;
 
 @RestController
-@RequestMapping("/api/admin/leads") // Ajustado para bater com o seu Front
+@RequestMapping("/admin")
 @CrossOrigin(origins = "http://localhost:5173")
 public class LeadController {
 
-    private final LeadService leadService;
+    private final LeadRepository leadRepository;
 
-    public LeadController(LeadService leadService) {
-        this.leadService = leadService;
+    public LeadController(LeadRepository leadRepository) {
+        this.leadRepository = leadRepository;
     }
 
-    @GetMapping
-    public ResponseEntity<Page<Lead>> listar(
-            @RequestParam(required = false) List<String> orgao,
-            @RequestParam(required = false) String margem,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        
-        System.out.println("🚀 ADMIN: Buscando leads na base...");
-        return ResponseEntity.ok(leadService.listarPaginado(orgao, margem, PageRequest.of(page, size)));
+    @GetMapping("/leads")
+    public ResponseEntity<List<Lead>> listarLeads() {
+        return ResponseEntity.ok(leadRepository.findAll());
+    }
+
+    @GetMapping("/leads/orgaos")
+    public ResponseEntity<List<String>> listarOrgaos() {
+        return ResponseEntity.ok(Arrays.asList("INSS", "SIAPE", "FGTS"));
+    }
+
+    @GetMapping("/consultores")
+    public ResponseEntity<List<String>> listarConsultores() {
+        return ResponseEntity.ok(Arrays.asList("Consultor 1", "Consultor 2"));
     }
 }

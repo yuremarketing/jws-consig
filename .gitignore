@@ -30,3 +30,4 @@ target/
 
 ### Help log ###
 .help.log
+scripts_backup/

@@ -31,11 +31,20 @@ public class AuthController {
             .map(user -> {
                 if (passwordEncoder.matches(password, user.getPassword())) {
                     String token = jwtUtils.generateToken(user.getEmail());
-                    // Enviamos campos extras para o Front não ter dúvida
+                    
+                    // Garante que ROLE_ADMIN e isAdmin estejam em sintonia
+                    String userRole = user.getRole();
+                    boolean isActuallyAdmin = userRole.equals("ADMIN") || userRole.equals("ROLE_ADMIN");
+                    
+                    // Normaliza para ROLE_ADMIN para evitar erro de segurança no Spring
+                    String normalizedRole = isActuallyAdmin ? "ROLE_ADMIN" : "ROLE_USER";
+
+                    System.out.println("✅ Login: " + user.getEmail() + " | Enviando isAdmin: " + isActuallyAdmin);
+                    
                     return ResponseEntity.ok(Map.of(
                         "token", token,
-                        "role", user.getRole(),
-                        "isAdmin", user.getRole().equals("ROLE_ADMIN"),
+                        "role", normalizedRole,
+                        "isAdmin", isActuallyAdmin,
                         "nome", user.getNome()
                     ));
                 }
