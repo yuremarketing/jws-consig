@@ -6,11 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import java.util.Map;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/leads")
+@RequestMapping("/api/admin/leads") // Ajustado para bater com o seu Front
+@CrossOrigin(origins = "http://localhost:5173")
 public class LeadController {
 
     private final LeadService leadService;
@@ -21,19 +21,12 @@ public class LeadController {
 
     @GetMapping
     public ResponseEntity<Page<Lead>> listar(
+            @RequestParam(required = false) List<String> orgao,
+            @RequestParam(required = false) String margem,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(leadService.listarPaginado(PageRequest.of(page, size)));
-    }
-
-    @PostMapping("/importar")
-    public ResponseEntity<?> importar(@RequestParam("file") MultipartFile file) {
-        try {
-            leadService.importCSV(file);
-            // Retornando um MAP que o Spring converte automaticamente para JSON
-            return ResponseEntity.ok(Map.of("message", "Importação concluída com sucesso!"));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", "Erro ao processar CSV: " + e.getMessage()));
-        }
+            @RequestParam(defaultValue = "50") int size) {
+        
+        System.out.println("🚀 ADMIN: Buscando leads na base...");
+        return ResponseEntity.ok(leadService.listarPaginado(orgao, margem, PageRequest.of(page, size)));
     }
 }
