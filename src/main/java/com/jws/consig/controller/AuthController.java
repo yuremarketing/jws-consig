@@ -29,23 +29,20 @@ public class AuthController {
 
         return userRepository.findByEmail(email)
             .map(user -> {
+                if (!user.isAtivo()) {
+                    return ResponseEntity.status(403).body(Map.of("message", "Conta desativada."));
+                }
                 if (passwordEncoder.matches(password, user.getPassword())) {
                     String token = jwtUtils.generateToken(user.getEmail());
-                    
-                    // Garante que ROLE_ADMIN e isAdmin estejam em sintonia
                     String userRole = user.getRole();
-                    boolean isActuallyAdmin = userRole.equals("ADMIN") || userRole.equals("ROLE_ADMIN");
-                    
-                    // Normaliza para ROLE_ADMIN para evitar erro de segurança no Spring
-                    String normalizedRole = isActuallyAdmin ? "ROLE_ADMIN" : "ROLE_USER";
-
-                    System.out.println("✅ Login: " + user.getEmail() + " | Enviando isAdmin: " + isActuallyAdmin);
+                    boolean isAdmin = userRole != null && (userRole.equals("ADMIN") || userRole.equals("ROLE_ADMIN"));
                     
                     return ResponseEntity.ok(Map.of(
                         "token", token,
-                        "role", normalizedRole,
-                        "isAdmin", isActuallyAdmin,
-                        "nome", user.getNome()
+                        "role", isAdmin ? "ROLE_ADMIN" : "ROLE_USER",
+                        "isAdmin", isAdmin,
+                        "nome", user.getNome(),
+                        "ativo", user.isAtivo()
                     ));
                 }
                 return ResponseEntity.status(401).body(Map.of("message", "Senha incorreta"));

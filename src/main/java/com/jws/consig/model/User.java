@@ -30,7 +30,14 @@ public class User implements UserDetails {
 
     private String role;
 
-    // --- GETTERS E SETTERS EXPLÍCITOS (Adeus erro do Lombok) ---
+    // --- NOVOS CAMPOS DA FASE 2 ---
+    @Column(nullable = false)
+    private boolean ativo = true;
+
+    @Column(name = "troca_senha_obrigatoria", nullable = false)
+    private boolean trocaSenhaObrigatoria = false;
+
+    // --- GETTERS E SETTERS ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getNome() { return nome; }
@@ -41,6 +48,11 @@ public class User implements UserDetails {
     public void setPassword(String password) { this.password = password; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    
+    public boolean isAtivo() { return ativo; }
+    public void setAtivo(boolean ativo) { this.ativo = ativo; }
+    public boolean isTrocaSenhaObrigatoria() { return trocaSenhaObrigatoria; }
+    public void setTrocaSenhaObrigatoria(boolean trocaSenhaObrigatoria) { this.trocaSenhaObrigatoria = trocaSenhaObrigatoria; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -54,5 +66,7 @@ public class User implements UserDetails {
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled() { return true; }
+    
+    // 👇 AGORA O SPRING SECURITY SABE SE O USUÁRIO ESTÁ ATIVO
+    @Override public boolean isEnabled() { return ativo; }
 }
